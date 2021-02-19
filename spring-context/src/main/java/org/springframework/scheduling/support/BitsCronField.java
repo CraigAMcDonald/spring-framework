@@ -19,14 +19,13 @@ package org.springframework.scheduling.support;
 import java.time.DateTimeException;
 import java.time.temporal.Temporal;
 import java.time.temporal.ValueRange;
-import java.util.BitSet;
 
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
- * Efficient {@link BitSet}-based extension of {@link CronField}.
+ * Efficient bitwise-operator extension of {@link CronField}.
  * Created using the {@code parse*} methods.
  *
  * @author Arjen Poutsma
@@ -130,8 +129,8 @@ final class BitsCronField extends CronField {
 					result.setBits(range);
 				}
 				else {
-					String rangeStr = value.substring(0, slashPos);
-					String deltaStr = value.substring(slashPos + 1);
+					String rangeStr = field.substring(0, slashPos);
+					String deltaStr = field.substring(slashPos + 1);
 					ValueRange range = parseRange(rangeStr, type);
 					if (rangeStr.indexOf('-') == -1) {
 						range = ValueRange.of(range.getMinimum(), type.range().getMaximum());

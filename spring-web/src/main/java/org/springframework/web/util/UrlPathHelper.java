@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2020 the original author or authors.
+ * Copyright 2002-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletMapping;
 import javax.servlet.http.HttpServletRequest;
@@ -61,7 +62,7 @@ public class UrlPathHelper {
 	 */
 	public static final String PATH_ATTRIBUTE = UrlPathHelper.class.getName() + ".PATH";
 
-	private static final boolean servlet4Present =
+	static final boolean servlet4Present =
 			ClassUtils.hasMethod(HttpServletRequest.class, "getHttpServletMapping");
 
 	/**
@@ -774,7 +775,10 @@ public class UrlPathHelper {
 	private static class Servlet4Delegate {
 
 		public static boolean skipServletPathDetermination(HttpServletRequest request) {
-			HttpServletMapping mapping = request.getHttpServletMapping();
+			HttpServletMapping mapping = (HttpServletMapping) request.getAttribute(RequestDispatcher.INCLUDE_MAPPING);
+			if (mapping == null) {
+				mapping = request.getHttpServletMapping();
+			}
 			MappingMatch match = mapping.getMappingMatch();
 			return (match != null && (!match.equals(MappingMatch.PATH) || mapping.getPattern().equals("/*")));
 		}
