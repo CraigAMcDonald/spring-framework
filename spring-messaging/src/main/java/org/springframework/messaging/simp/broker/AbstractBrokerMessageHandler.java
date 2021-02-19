@@ -19,7 +19,6 @@ package org.springframework.messaging.simp.broker;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
 
 import org.apache.commons.logging.Log;
 
@@ -58,9 +57,6 @@ public abstract class AbstractBrokerMessageHandler
 	private final SubscribableChannel brokerChannel;
 
 	private final Collection<String> destinationPrefixes;
-
-	@Nullable
-	private Predicate<String> userDestinationPredicate;
 
 	private boolean preservePublishOrder = false;
 
@@ -137,21 +133,6 @@ public abstract class AbstractBrokerMessageHandler
 	 */
 	public Collection<String> getDestinationPrefixes() {
 		return this.destinationPrefixes;
-	}
-
-	/**
-	 * Configure a Predicate to identify messages with a user destination. When
-	 * no {@link #getDestinationPrefixes() destination prefixes} are configured,
-	 * this helps to recognize and skip user destination messages that need to
-	 * be pre-processed by the
-	 * {@link org.springframework.messaging.simp.user.UserDestinationMessageHandler}
-	 * before they reach the broker.
-	 * @param predicate the predicate to identify user messages with a non-null
-	 * destination as messages with a user destinations.
-	 * @since 5.3.4
-	 */
-	public void setUserDestinationPredicate(@Nullable Predicate<String> predicate) {
-		this.userDestinationPredicate = predicate;
 	}
 
 	/**
@@ -284,26 +265,9 @@ public abstract class AbstractBrokerMessageHandler
 	protected abstract void handleMessageInternal(Message<?> message);
 
 
-	/**
-	 * Whether a message with the given destination should be processed. This is
-	 * the case if one of the following conditions is true:
-	 * <ol>
-	 * <li>The destination starts with one of the configured
-	 * {@link #getDestinationPrefixes() destination prefixes}.
-	 * <li>No prefixes are configured and the destination isn't matched
-	 * by the {@link #setUserDestinationPredicate(Predicate)
-	 * userDestinationPredicate}.
-	 * <li>The message has no destination.
-	 * </ol>
-	 * @param destination the destination to check
-	 * @return whether to process (true) or skip (false) the destination
-	 */
 	protected boolean checkDestinationPrefix(@Nullable String destination) {
-		if (destination == null) {
+		if (destination == null || CollectionUtils.isEmpty(this.destinationPrefixes)) {
 			return true;
-		}
-		if (CollectionUtils.isEmpty(this.destinationPrefixes)) {
-			return !isUserDestination(destination);
 		}
 		for (String prefix : this.destinationPrefixes) {
 			if (destination.startsWith(prefix)) {
@@ -311,10 +275,6 @@ public abstract class AbstractBrokerMessageHandler
 			}
 		}
 		return false;
-	}
-
-	private boolean isUserDestination(String destination) {
-		return (this.userDestinationPredicate != null && this.userDestinationPredicate.test(destination));
 	}
 
 	protected void publishBrokerAvailableEvent() {

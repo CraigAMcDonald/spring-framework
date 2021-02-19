@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2021 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,37 +26,40 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DefaultRequestPathTests {
 
 	@Test
-	void parse() {
+	void requestPath() {
 		// basic
-		testParse("/app/a/b/c", "/app", "/a/b/c");
+		testRequestPath("/app/a/b/c", "/app", "/a/b/c");
 
 		// no context path
-		testParse("/a/b/c", "", "/a/b/c");
+		testRequestPath("/a/b/c", "", "/a/b/c");
 
 		// context path only
-		testParse("/a/b", "/a/b", "");
+		testRequestPath("/a/b", "/a/b", "");
 
 		// root path
-		testParse("/", "", "/");
+		testRequestPath("/", "", "/");
 
 		// empty path
-		testParse("", "", "");
-		testParse("", "/", "");
+		testRequestPath("", "", "");
+		testRequestPath("", "/", "");
 
 		// trailing slash
-		testParse("/app/a/", "/app", "/a/");
-		testParse("/app/a//", "/app", "/a//");
+		testRequestPath("/app/a/", "/app", "/a/");
+		testRequestPath("/app/a//", "/app", "/a//");
 	}
 
-	private void testParse(String fullPath, String contextPath, String pathWithinApplication) {
+	private void testRequestPath(String fullPath, String contextPath, String pathWithinApplication) {
+
 		RequestPath requestPath = RequestPath.parse(fullPath, contextPath);
+
 		Object expected = contextPath.equals("/") ? "" : contextPath;
 		assertThat(requestPath.contextPath().value()).isEqualTo(expected);
 		assertThat(requestPath.pathWithinApplication().value()).isEqualTo(pathWithinApplication);
 	}
 
 	@Test
-	void modifyContextPath() {
+	void updateRequestPath() {
+
 		RequestPath requestPath = RequestPath.parse("/aA/bB/cC", null);
 
 		assertThat(requestPath.contextPath().value()).isEqualTo("");

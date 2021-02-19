@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2021 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,6 +104,7 @@ public abstract class AbstractJackson2Encoder extends Jackson2CodecSupport imple
 
 	@Override
 	public boolean canEncode(ResolvableType elementType, @Nullable MimeType mimeType) {
+		Class<?> clazz = elementType.toClass();
 		if (!supportsMimeType(mimeType)) {
 			return false;
 		}
@@ -113,11 +114,6 @@ public abstract class AbstractJackson2Encoder extends Jackson2CodecSupport imple
 				return false;
 			}
 		}
-		ObjectMapper mapper = selectObjectMapper(elementType, mimeType);
-		if (mapper == null) {
-			return false;
-		}
-		Class<?> clazz = elementType.toClass();
 		if (String.class.isAssignableFrom(elementType.resolve(clazz))) {
 			return false;
 		}
@@ -125,11 +121,11 @@ public abstract class AbstractJackson2Encoder extends Jackson2CodecSupport imple
 			return true;
 		}
 		if (!logger.isDebugEnabled()) {
-			return mapper.canSerialize(clazz);
+			return getObjectMapper().canSerialize(clazz);
 		}
 		else {
 			AtomicReference<Throwable> causeRef = new AtomicReference<>();
-			if (mapper.canSerialize(clazz, causeRef)) {
+			if (getObjectMapper().canSerialize(clazz, causeRef)) {
 				return true;
 			}
 			logWarningIfNecessary(clazz, causeRef.get());
@@ -154,14 +150,10 @@ public abstract class AbstractJackson2Encoder extends Jackson2CodecSupport imple
 			byte[] separator = getStreamingMediaTypeSeparator(mimeType);
 			if (separator != null) { // streaming
 				try {
-					ObjectMapper mapper = selectObjectMapper(elementType, mimeType);
-					if (mapper == null) {
-						throw new IllegalStateException("No ObjectMapper for " + elementType);
-					}
-					ObjectWriter writer = createObjectWriter(mapper, elementType, mimeType, null, hints);
+					ObjectWriter writer = createObjectWriter(elementType, mimeType, null, hints);
 					ByteArrayBuilder byteBuilder = new ByteArrayBuilder(writer.getFactory()._getBufferRecycler());
 					JsonEncoding encoding = getJsonEncoding(mimeType);
-					JsonGenerator generator = mapper.getFactory().createGenerator(byteBuilder, encoding);
+					JsonGenerator generator = getObjectMapper().getFactory().createGenerator(byteBuilder, encoding);
 					SequenceWriter sequenceWriter = writer.writeValues(generator);
 
 					return Flux.from(inputStream)
@@ -196,10 +188,6 @@ public abstract class AbstractJackson2Encoder extends Jackson2CodecSupport imple
 	public DataBuffer encodeValue(Object value, DataBufferFactory bufferFactory,
 			ResolvableType valueType, @Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
 
-		ObjectMapper mapper = selectObjectMapper(valueType, mimeType);
-		if (mapper == null) {
-			throw new IllegalStateException("No ObjectMapper for " + valueType);
-		}
 		Class<?> jsonView = null;
 		FilterProvider filters = null;
 		if (value instanceof MappingJacksonValue) {
@@ -208,7 +196,7 @@ public abstract class AbstractJackson2Encoder extends Jackson2CodecSupport imple
 			jsonView = container.getSerializationView();
 			filters = container.getFilters();
 		}
-		ObjectWriter writer = createObjectWriter(mapper, valueType, mimeType, jsonView, hints);
+		ObjectWriter writer = createObjectWriter(valueType, mimeType, jsonView, hints);
 		if (filters != null) {
 			writer = writer.with(filters);
 		}
@@ -218,7 +206,7 @@ public abstract class AbstractJackson2Encoder extends Jackson2CodecSupport imple
 
 			logValue(hints, value);
 
-			try (JsonGenerator generator = mapper.getFactory().createGenerator(byteBuilder, encoding)) {
+			try (JsonGenerator generator = getObjectMapper().getFactory().createGenerator(byteBuilder, encoding)) {
 				writer.writeValue(generator, value);
 				generator.flush();
 			}
@@ -235,7 +223,6 @@ public abstract class AbstractJackson2Encoder extends Jackson2CodecSupport imple
 			byte[] bytes = byteBuilder.toByteArray();
 			DataBuffer buffer = bufferFactory.allocateBuffer(bytes.length);
 			buffer.write(bytes);
-			Hints.touchDataBuffer(buffer, hints, logger);
 
 			return buffer;
 		}
@@ -280,7 +267,6 @@ public abstract class AbstractJackson2Encoder extends Jackson2CodecSupport imple
 		DataBuffer buffer = bufferFactory.allocateBuffer(length + separator.length);
 		buffer.write(bytes, offset, length);
 		buffer.write(separator);
-		Hints.touchDataBuffer(buffer, hints, logger);
 
 		return buffer;
 	}
@@ -294,18 +280,20 @@ public abstract class AbstractJackson2Encoder extends Jackson2CodecSupport imple
 		}
 	}
 
-	private ObjectWriter createObjectWriter(
-			ObjectMapper mapper, ResolvableType valueType, @Nullable MimeType mimeType,
+	private ObjectWriter createObjectWriter(ResolvableType valueType, @Nullable MimeType mimeType,
 			@Nullable Class<?> jsonView, @Nullable Map<String, Object> hints) {
 
 		JavaType javaType = getJavaType(valueType.getType(), null);
 		if (jsonView == null && hints != null) {
 			jsonView = (Class<?>) hints.get(Jackson2CodecSupport.JSON_VIEW_HINT);
 		}
-		ObjectWriter writer = (jsonView != null ? mapper.writerWithView(jsonView) : mapper.writer());
+		ObjectWriter writer = (jsonView != null ?
+				getObjectMapper().writerWithView(jsonView) : getObjectMapper().writer());
+
 		if (javaType.isContainerType()) {
 			writer = writer.forType(javaType);
 		}
+
 		return customizeWriter(writer, mimeType, valueType, hints);
 	}
 
@@ -355,11 +343,6 @@ public abstract class AbstractJackson2Encoder extends Jackson2CodecSupport imple
 	@Override
 	public List<MimeType> getEncodableMimeTypes() {
 		return getMimeTypes();
-	}
-
-	@Override
-	public List<MimeType> getEncodableMimeTypes(ResolvableType elementType) {
-		return getMimeTypes(elementType);
 	}
 
 	@Override

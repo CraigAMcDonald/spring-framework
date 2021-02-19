@@ -330,25 +330,19 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 					logger.trace(exchange.getLogPrefix() + matches.size() + " matching mappings: " + matches);
 				}
 				if (CorsUtils.isPreFlightRequest(exchange.getRequest())) {
-					for (Match match : matches) {
-						if (match.hasCorsConfig()) {
-							return PREFLIGHT_AMBIGUOUS_MATCH;
-						}
-					}
+					return PREFLIGHT_AMBIGUOUS_MATCH;
 				}
-				else {
-					Match secondBestMatch = matches.get(1);
-					if (comparator.compare(bestMatch, secondBestMatch) == 0) {
-						Method m1 = bestMatch.getHandlerMethod().getMethod();
-						Method m2 = secondBestMatch.getHandlerMethod().getMethod();
-						RequestPath path = exchange.getRequest().getPath();
-						throw new IllegalStateException(
-								"Ambiguous handler methods mapped for '" + path + "': {" + m1 + ", " + m2 + "}");
-					}
+				Match secondBestMatch = matches.get(1);
+				if (comparator.compare(bestMatch, secondBestMatch) == 0) {
+					Method m1 = bestMatch.handlerMethod.getMethod();
+					Method m2 = secondBestMatch.handlerMethod.getMethod();
+					RequestPath path = exchange.getRequest().getPath();
+					throw new IllegalStateException(
+							"Ambiguous handler methods mapped for '" + path + "': {" + m1 + ", " + m2 + "}");
 				}
 			}
-			handleMatch(bestMatch.mapping, bestMatch.getHandlerMethod(), exchange);
-			return bestMatch.getHandlerMethod();
+			handleMatch(bestMatch.mapping, bestMatch.handlerMethod, exchange);
+			return bestMatch.handlerMethod;
 		}
 		else {
 			return handleNoMatch(this.mappingRegistry.getRegistrations().keySet(), exchange);
@@ -359,7 +353,8 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 		for (T mapping : mappings) {
 			T match = getMatchingMapping(mapping, exchange);
 			if (match != null) {
-				matches.add(new Match(match, this.mappingRegistry.getRegistrations().get(mapping)));
+				matches.add(new Match(match,
+						this.mappingRegistry.getRegistrations().get(mapping).getHandlerMethod()));
 			}
 		}
 	}
@@ -524,14 +519,13 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 					this.pathLookup.add(path, mapping);
 				}
 
-				CorsConfiguration corsConfig = initCorsConfiguration(handler, method, mapping);
-				if (corsConfig != null) {
-					corsConfig.validateAllowCredentials();
-					this.corsLookup.put(handlerMethod, corsConfig);
+				CorsConfiguration config = initCorsConfiguration(handler, method, mapping);
+				if (config != null) {
+					config.validateAllowCredentials();
+					this.corsLookup.put(handlerMethod, config);
 				}
 
-				this.registry.put(mapping,
-						new MappingRegistration<>(mapping, handlerMethod, directPaths, corsConfig != null));
+				this.registry.put(mapping, new MappingRegistration<>(mapping, handlerMethod, directPaths));
 			}
 			finally {
 				this.readWriteLock.writeLock().unlock();
@@ -584,17 +578,12 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 
 		private final Set<String> directPaths;
 
-		private final boolean corsConfig;
-
-		public MappingRegistration(
-				T mapping, HandlerMethod handlerMethod, @Nullable Set<String> directPaths, boolean corsConfig) {
-
+		public MappingRegistration(T mapping, HandlerMethod handlerMethod, @Nullable Set<String> directPaths) {
 			Assert.notNull(mapping, "Mapping must not be null");
 			Assert.notNull(handlerMethod, "HandlerMethod must not be null");
 			this.mapping = mapping;
 			this.handlerMethod = handlerMethod;
 			this.directPaths = (directPaths != null ? directPaths : Collections.emptySet());
-			this.corsConfig = corsConfig;
 		}
 
 		public T getMapping() {
@@ -608,10 +597,6 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 		public Set<String> getDirectPaths() {
 			return this.directPaths;
 		}
-
-		public boolean hasCorsConfig() {
-			return this.corsConfig;
-		}
 	}
 
 
@@ -623,23 +608,11 @@ public abstract class AbstractHandlerMethodMapping<T> extends AbstractHandlerMap
 
 		private final T mapping;
 
-		private final MappingRegistration<T> registration;
+		private final HandlerMethod handlerMethod;
 
-		public Match(T mapping, MappingRegistration<T> registration) {
+		public Match(T mapping, HandlerMethod handlerMethod) {
 			this.mapping = mapping;
-			this.registration = registration;
-		}
-
-		public T getMapping() {
-			return this.mapping;
-		}
-
-		public HandlerMethod getHandlerMethod() {
-			return this.registration.getHandlerMethod();
-		}
-
-		public boolean hasCorsConfig() {
-			return this.registration.hasCorsConfig();
+			this.handlerMethod = handlerMethod;
 		}
 
 		@Override

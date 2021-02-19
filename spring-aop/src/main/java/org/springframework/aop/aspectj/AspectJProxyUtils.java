@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2020 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.List;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.PointcutAdvisor;
 import org.springframework.aop.interceptor.ExposeInvocationInterceptor;
-import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
 
 /**
@@ -75,7 +74,7 @@ public abstract class AspectJProxyUtils {
 						((PointcutAdvisor) advisor).getPointcut() instanceof AspectJExpressionPointcut));
 	}
 
-	static boolean isVariableName(@Nullable String name) {
+	static boolean isVariableName(String name) {
 		if (!StringUtils.hasLength(name)) {
 			return false;
 		}
@@ -89,5 +88,4 @@ public abstract class AspectJProxyUtils {
 		}
 		return true;
 	}
-
 }

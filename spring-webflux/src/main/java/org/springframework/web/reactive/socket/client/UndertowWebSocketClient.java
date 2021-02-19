@@ -42,7 +42,6 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.web.reactive.socket.HandshakeInfo;
 import org.springframework.web.reactive.socket.WebSocketHandler;
-import org.springframework.web.reactive.socket.adapter.ContextWebSocketHandler;
 import org.springframework.web.reactive.socket.adapter.UndertowWebSocketHandlerAdapter;
 import org.springframework.web.reactive.socket.adapter.UndertowWebSocketSession;
 
@@ -155,9 +154,9 @@ public class UndertowWebSocketClient implements WebSocketClient {
 	}
 
 	private Mono<Void> executeInternal(URI url, HttpHeaders headers, WebSocketHandler handler) {
-		Sinks.Empty<Void> completion = Sinks.empty();
-		return Mono.deferContextual(
-				contextView -> {
+		Sinks.Empty<Void> completionSink = Sinks.empty();
+		return Mono.fromCallable(
+				() -> {
 					if (logger.isDebugEnabled()) {
 						logger.debug("Connecting to " + url);
 					}
@@ -165,22 +164,21 @@ public class UndertowWebSocketClient implements WebSocketClient {
 					ConnectionBuilder builder = createConnectionBuilder(url);
 					DefaultNegotiation negotiation = new DefaultNegotiation(protocols, headers, builder);
 					builder.setClientNegotiation(negotiation);
-					builder.connect().addNotifier(
+					return builder.connect().addNotifier(
 							new IoFuture.HandlingNotifier<WebSocketChannel, Object>() {
 								@Override
 								public void handleDone(WebSocketChannel channel, Object attachment) {
-									handleChannel(url, ContextWebSocketHandler.decorate(handler, contextView),
-											completion, negotiation, channel);
+									handleChannel(url, handler, completionSink, negotiation, channel);
 								}
 								@Override
 								public void handleFailed(IOException ex, Object attachment) {
 									// Ignore result: can't overflow, ok if not first or no one listens
-									completion.tryEmitError(
+									completionSink.tryEmitError(
 											new IllegalStateException("Failed to connect to " + url, ex));
 								}
 							}, null);
-					return completion.asMono();
-				});
+				})
+				.then(completionSink.asMono());
 	}
 
 	/**

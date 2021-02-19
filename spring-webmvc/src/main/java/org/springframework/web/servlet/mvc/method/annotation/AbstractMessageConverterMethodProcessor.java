@@ -299,7 +299,7 @@ public abstract class AbstractMessageConverterMethodProcessor extends AbstractMe
 				throw new HttpMessageNotWritableException(
 						"No converter for [" + valueType + "] with preset Content-Type '" + contentType + "'");
 			}
-			throw new HttpMediaTypeNotAcceptableException(getSupportedMediaTypes(body.getClass()));
+			throw new HttpMediaTypeNotAcceptableException(this.allSupportedMediaTypes);
 		}
 	}
 
@@ -361,18 +361,23 @@ public abstract class AbstractMessageConverterMethodProcessor extends AbstractMe
 		if (!CollectionUtils.isEmpty(mediaTypes)) {
 			return new ArrayList<>(mediaTypes);
 		}
-		List<MediaType> result = new ArrayList<>();
-		for (HttpMessageConverter<?> converter : this.messageConverters) {
-			if (converter instanceof GenericHttpMessageConverter && targetType != null) {
-				if (((GenericHttpMessageConverter<?>) converter).canWrite(targetType, valueClass, null)) {
-					result.addAll(converter.getSupportedMediaTypes(valueClass));
+		else if (!this.allSupportedMediaTypes.isEmpty()) {
+			List<MediaType> result = new ArrayList<>();
+			for (HttpMessageConverter<?> converter : this.messageConverters) {
+				if (converter instanceof GenericHttpMessageConverter && targetType != null) {
+					if (((GenericHttpMessageConverter<?>) converter).canWrite(targetType, valueClass, null)) {
+						result.addAll(converter.getSupportedMediaTypes());
+					}
+				}
+				else if (converter.canWrite(valueClass, null)) {
+					result.addAll(converter.getSupportedMediaTypes());
 				}
 			}
-			else if (converter.canWrite(valueClass, null)) {
-				result.addAll(converter.getSupportedMediaTypes(valueClass));
-			}
+			return result;
 		}
-		return (result.isEmpty() ? Collections.singletonList(MediaType.ALL) : result);
+		else {
+			return Collections.singletonList(MediaType.ALL);
+		}
 	}
 
 	private List<MediaType> getAcceptableMediaTypes(HttpServletRequest request)

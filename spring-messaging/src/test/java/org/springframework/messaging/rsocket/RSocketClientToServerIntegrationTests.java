@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2021 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.springframework.messaging.rsocket;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.rsocket.Payload;
 import io.rsocket.RSocket;
 import io.rsocket.SocketAcceptor;
 import io.rsocket.core.RSocketServer;
@@ -42,7 +43,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.rsocket.annotation.ConnectMapping;
 import org.springframework.messaging.rsocket.annotation.support.RSocketMessageHandler;
 import org.springframework.stereotype.Controller;
@@ -164,12 +164,6 @@ public class RSocketClientToServerIntegrationTests {
 				.verify(Duration.ofSeconds(5));
 	}
 
-	@Test // gh-26344
-	public void echoChannelWithEmptyInput() {
-		Flux<String> result = requester.route("echo-channel-empty").data(Flux.empty()).retrieveFlux(String.class);
-		StepVerifier.create(result).verifyComplete();
-	}
-
 	@Test
 	public void metadataPush() {
 		Flux.just("bar", "baz")
@@ -260,11 +254,6 @@ public class RSocketClientToServerIntegrationTests {
 			return payloads.delayElements(Duration.ofMillis(10)).map(payload -> payload + " async");
 		}
 
-		@MessageMapping("echo-channel-empty")
-		Flux<String> echoChannelEmpty(@Payload(required = false) Flux<String> payloads) {
-			return payloads.map(payload -> payload + " echoed");
-		}
-
 		@MessageMapping("thrown-exception")
 		Mono<String> handleAndThrow(String payload) {
 			throw new IllegalArgumentException("Invalid input error");
@@ -349,29 +338,29 @@ public class RSocketClientToServerIntegrationTests {
 		}
 
 		@Override
-		public Mono<Void> fireAndForget(io.rsocket.Payload payload) {
+		public Mono<Void> fireAndForget(Payload payload) {
 			return this.delegate.fireAndForget(payload)
 					.doOnSuccess(aVoid -> this.fireAndForgetCount.incrementAndGet());
 		}
 
 		@Override
-		public Mono<Void> metadataPush(io.rsocket.Payload payload) {
+		public Mono<Void> metadataPush(Payload payload) {
 			return this.delegate.metadataPush(payload)
 					.doOnSuccess(aVoid -> this.metadataPushCount.incrementAndGet());
 		}
 
 		@Override
-		public Mono<io.rsocket.Payload> requestResponse(io.rsocket.Payload payload) {
+		public Mono<Payload> requestResponse(Payload payload) {
 			return this.delegate.requestResponse(payload);
 		}
 
 		@Override
-		public Flux<io.rsocket.Payload> requestStream(io.rsocket.Payload payload) {
+		public Flux<Payload> requestStream(Payload payload) {
 			return this.delegate.requestStream(payload);
 		}
 
 		@Override
-		public Flux<io.rsocket.Payload> requestChannel(Publisher<io.rsocket.Payload> payloads) {
+		public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
 			return this.delegate.requestChannel(payloads);
 		}
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2021 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,10 +45,10 @@ public abstract class TransactionSynchronizationUtils {
 
 
 	/**
-	 * Check whether the given resource transaction manager refers to the given
+	 * Check whether the given resource transaction managers refers to the given
 	 * (underlying) resource factory.
 	 * @see ResourceTransactionManager#getResourceFactory()
-	 * @see InfrastructureProxy#getWrappedObject()
+	 * @see org.springframework.core.InfrastructureProxy#getWrappedObject()
 	 */
 	public static boolean sameResourceFactory(ResourceTransactionManager tm, Object resourceFactory) {
 		return unwrapResourceIfNecessary(tm.getResourceFactory()).equals(unwrapResourceIfNecessary(resourceFactory));
@@ -57,11 +57,9 @@ public abstract class TransactionSynchronizationUtils {
 	/**
 	 * Unwrap the given resource handle if necessary; otherwise return
 	 * the given handle as-is.
-	 * @since 5.3.4
-	 * @see InfrastructureProxy#getWrappedObject()
-	 * @see ScopedProxyUnwrapper#unwrapIfNecessary(Object)
+	 * @see org.springframework.core.InfrastructureProxy#getWrappedObject()
 	 */
-	public static Object unwrapResourceIfNecessary(Object resource) {
+	static Object unwrapResourceIfNecessary(Object resource) {
 		Assert.notNull(resource, "Resource must not be null");
 		Object resourceRef = resource;
 		// unwrap infrastructure proxy

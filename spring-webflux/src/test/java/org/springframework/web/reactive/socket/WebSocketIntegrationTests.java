@@ -33,7 +33,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
-import org.springframework.web.filter.reactive.ServerWebExchangeContextFilter;
 import org.springframework.web.reactive.HandlerMapping;
 import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.reactive.socket.client.WebSocketClient;
@@ -217,11 +216,8 @@ class WebSocketIntegrationTests extends AbstractWebSocketIntegrationTests {
 
 		@Override
 		public Mono<Void> handle(WebSocketSession session) {
-			return Mono.deferContextual(contextView -> {
-				String key = ServerWebExchangeContextFilter.EXCHANGE_CONTEXT_ATTRIBUTE;
-				assertThat(contextView.getOrEmpty(key).orElse(null)).isNotNull();
-				return session.send(session.receive().doOnNext(WebSocketMessage::retain));
-			});
+			// Use retain() for Reactor Netty
+			return session.send(session.receive().doOnNext(WebSocketMessage::retain));
 		}
 	}
 

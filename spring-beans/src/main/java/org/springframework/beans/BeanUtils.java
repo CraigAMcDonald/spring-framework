@@ -268,7 +268,10 @@ public abstract class BeanUtils {
 	public static <T> Constructor<T> findPrimaryConstructor(Class<T> clazz) {
 		Assert.notNull(clazz, "Class must not be null");
 		if (KotlinDetector.isKotlinReflectPresent() && KotlinDetector.isKotlinType(clazz)) {
-			return KotlinDelegate.findPrimaryConstructor(clazz);
+			Constructor<T> kotlinPrimaryConstructor = KotlinDelegate.findPrimaryConstructor(clazz);
+			if (kotlinPrimaryConstructor != null) {
+				return kotlinPrimaryConstructor;
+			}
 		}
 		return null;
 	}
@@ -540,7 +543,6 @@ public abstract class BeanUtils {
 		if (targetType == null || targetType.isArray() || unknownEditorTypes.contains(targetType)) {
 			return null;
 		}
-
 		ClassLoader cl = targetType.getClassLoader();
 		if (cl == null) {
 			try {
@@ -557,34 +559,28 @@ public abstract class BeanUtils {
 				return null;
 			}
 		}
-
 		String targetTypeName = targetType.getName();
 		String editorName = targetTypeName + "Editor";
 		try {
 			Class<?> editorClass = cl.loadClass(editorName);
-			if (editorClass != null) {
-				if (!PropertyEditor.class.isAssignableFrom(editorClass)) {
-					if (logger.isInfoEnabled()) {
-						logger.info("Editor class [" + editorName +
-								"] does not implement [java.beans.PropertyEditor] interface");
-					}
-					unknownEditorTypes.add(targetType);
-					return null;
+			if (!PropertyEditor.class.isAssignableFrom(editorClass)) {
+				if (logger.isInfoEnabled()) {
+					logger.info("Editor class [" + editorName +
+							"] does not implement [java.beans.PropertyEditor] interface");
 				}
-				return (PropertyEditor) instantiateClass(editorClass);
+				unknownEditorTypes.add(targetType);
+				return null;
 			}
-			// Misbehaving ClassLoader returned null instead of ClassNotFoundException
-			// - fall back to unknown editor type registration below
+			return (PropertyEditor) instantiateClass(editorClass);
 		}
 		catch (ClassNotFoundException ex) {
-			// Ignore - fall back to unknown editor type registration below
+			if (logger.isTraceEnabled()) {
+				logger.trace("No property editor [" + editorName + "] found for type " +
+						targetTypeName + " according to 'Editor' suffix convention");
+			}
+			unknownEditorTypes.add(targetType);
+			return null;
 		}
-		if (logger.isTraceEnabled()) {
-			logger.trace("No property editor [" + editorName + "] found for type " +
-					targetTypeName + " according to 'Editor' suffix convention");
-		}
-		unknownEditorTypes.add(targetType);
-		return null;
 	}
 
 	/**
@@ -776,14 +772,7 @@ public abstract class BeanUtils {
 					if (readMethod != null) {
 						ResolvableType sourceResolvableType = ResolvableType.forMethodReturnType(readMethod);
 						ResolvableType targetResolvableType = ResolvableType.forMethodParameter(writeMethod, 0);
-
-						// Ignore generic types in assignable check if either ResolvableType has unresolvable generics.
-						boolean isAssignable =
-								(sourceResolvableType.hasUnresolvableGenerics() || targetResolvableType.hasUnresolvableGenerics() ?
-										ClassUtils.isAssignable(writeMethod.getParameterTypes()[0], readMethod.getReturnType()) :
-										targetResolvableType.isAssignableFrom(sourceResolvableType));
-
-						if (isAssignable) {
+						if (targetResolvableType.isAssignableFrom(sourceResolvableType)) {
 							try {
 								if (!Modifier.isPublic(readMethod.getDeclaringClass().getModifiers())) {
 									readMethod.setAccessible(true);

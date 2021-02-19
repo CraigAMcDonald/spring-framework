@@ -682,7 +682,8 @@ XML extension (a custom XML element) that lets us configure objects of the type
 `SimpleDateFormat` (from the `java.text` package). When we are done,
 we will be able to define bean definitions of type `SimpleDateFormat` as follows:
 
-[source,xml,indent=0,subs="verbatim,quotes"]
+[source,xml,indent=0]
+[subs="verbatim,quotes"]
 ----
 	<myns:dateformat id="dateFormat"
 		pattern="yyyy-MM-dd HH:mm"
@@ -1668,4 +1669,8 @@ its behavior changes.
 | `spring.context.refresh`
 | Application context refresh phase.
 |
+
+| `spring.event.invoke-listener`
+| Invocation of event listeners, if done in the main thread.
+| `event` the current application event, `eventType` its type and `listener` the listener processing this event.
 |===

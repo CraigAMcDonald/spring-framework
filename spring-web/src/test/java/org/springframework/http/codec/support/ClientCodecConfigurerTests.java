@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2021 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
@@ -53,7 +52,6 @@ import org.springframework.http.codec.HttpMessageWriter;
 import org.springframework.http.codec.ResourceHttpMessageReader;
 import org.springframework.http.codec.ResourceHttpMessageWriter;
 import org.springframework.http.codec.ServerSentEventHttpMessageReader;
-import org.springframework.http.codec.json.Jackson2CodecSupport;
 import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.http.codec.json.Jackson2SmileDecoder;
@@ -123,29 +121,12 @@ public class ClientCodecConfigurerTests {
 	}
 
 	@Test
-	public void jackson2CodecCustomizations() {
+	public void jackson2EncoderOverride() {
 		Jackson2JsonDecoder decoder = new Jackson2JsonDecoder();
-		Jackson2JsonEncoder encoder = new Jackson2JsonEncoder();
 		this.configurer.defaultCodecs().jackson2JsonDecoder(decoder);
-		this.configurer.defaultCodecs().jackson2JsonEncoder(encoder);
-
-		ObjectMapper objectMapper = new ObjectMapper();
-		this.configurer.defaultCodecs().configureDefaultCodec(codec -> {
-			if (codec instanceof Jackson2CodecSupport) {
-				((Jackson2CodecSupport) codec).setObjectMapper(objectMapper);
-			}
-		});
 
 		List<HttpMessageReader<?>> readers = this.configurer.getReaders();
-		Jackson2JsonDecoder actualDecoder = findCodec(readers, Jackson2JsonDecoder.class);
-		assertThat(actualDecoder).isSameAs(decoder);
-		assertThat(actualDecoder.getObjectMapper()).isSameAs(objectMapper);
 		assertThat(findCodec(readers, ServerSentEventHttpMessageReader.class).getDecoder()).isSameAs(decoder);
-
-		List<HttpMessageWriter<?>> writers = this.configurer.getWriters();
-		Jackson2JsonEncoder actualEncoder = findCodec(writers, Jackson2JsonEncoder.class);
-		assertThat(actualEncoder).isSameAs(encoder);
-		assertThat(actualEncoder.getObjectMapper()).isSameAs(objectMapper);
 	}
 
 	@Test
@@ -256,19 +237,7 @@ public class ClientCodecConfigurerTests {
 
 	@SuppressWarnings("unchecked")
 	private <T> T findCodec(List<?> codecs, Class<T> type) {
-		return (T) codecs.stream()
-				.map(c -> {
-					if (c instanceof EncoderHttpMessageWriter) {
-						return ((EncoderHttpMessageWriter<?>) c).getEncoder();
-					}
-					else if (c instanceof DecoderHttpMessageReader) {
-						return ((DecoderHttpMessageReader<?>) c).getDecoder();
-					}
-					else {
-						return c;
-					}
-				})
-				.filter(type::isInstance).findFirst().get();
+		return (T) codecs.stream().filter(type::isInstance).findFirst().get();
 	}
 
 	@SuppressWarnings("unchecked")

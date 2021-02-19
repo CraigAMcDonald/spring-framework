@@ -475,10 +475,7 @@ public class FormHttpMessageConverter implements HttpMessageConverter<MultiValue
 
 		byte[] boundary = generateMultipartBoundary();
 		if (!isFilenameCharsetSet()) {
-			if (!this.charset.equals(StandardCharsets.UTF_8) &&
-					!this.charset.equals(StandardCharsets.US_ASCII)) {
-				parameters.put("charset", this.charset.name());
-			}
+			parameters.put("charset", this.charset.name());
 		}
 		parameters.put("boundary", new String(boundary, StandardCharsets.US_ASCII));
 

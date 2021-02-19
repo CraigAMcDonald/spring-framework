@@ -38,6 +38,24 @@ import org.springframework.util.Assert;
  */
 final class QuartzCronField extends CronField {
 
+	/**
+	 * Temporal adjuster that returns the last weekday of the month.
+	 */
+	private static final TemporalAdjuster lastWeekdayOfMonth = temporal -> {
+		Temporal lastDayOfMonth = TemporalAdjusters.lastDayOfMonth().adjustInto(temporal);
+		int dayOfWeek = lastDayOfMonth.get(ChronoField.DAY_OF_WEEK);
+		if (dayOfWeek == 6) { // Saturday
+			return lastDayOfMonth.minus(1, ChronoUnit.DAYS);
+		}
+		else if (dayOfWeek == 7) { // Sunday
+			return lastDayOfMonth.minus(2, ChronoUnit.DAYS);
+		}
+		else {
+			return lastDayOfMonth;
+		}
+	};
+
+
 	private final Type rollForwardType;
 
 	private final TemporalAdjuster adjuster;
@@ -60,12 +78,6 @@ final class QuartzCronField extends CronField {
 		this.rollForwardType = rollForwardType;
 	}
 
-	/**
-	 * Returns whether the given value is a Quartz day-of-month field.
-	 */
-	public static boolean isQuartzDaysOfMonthField(String value) {
-		return value.contains("L") || value.contains("W");
-	}
 
 	/**
 	 * Parse the given value into a days of months {@code QuartzCronField}, the fourth entry of a cron expression.
@@ -79,11 +91,11 @@ final class QuartzCronField extends CronField {
 				throw new IllegalArgumentException("Unrecognized characters before 'L' in '" + value + "'");
 			}
 			else if (value.length() == 2 && value.charAt(1) == 'W') { // "LW"
-				adjuster = lastWeekdayOfMonth();
+				adjuster = lastWeekdayOfMonth;
 			}
 			else {
 				if (value.length() == 1) { // "L"
-					adjuster = lastDayOfMonth();
+					adjuster = TemporalAdjusters.lastDayOfMonth();
 				}
 				else { // "L-[0-9]+"
 					int offset = Integer.parseInt(value.substring(idx + 1));
@@ -114,13 +126,6 @@ final class QuartzCronField extends CronField {
 	}
 
 	/**
-	 * Returns whether the given value is a Quartz day-of-week field.
-	 */
-	public static boolean isQuartzDaysOfWeekField(String value) {
-		return value.contains("L") || value.contains("#");
-	}
-
-	/**
 	 * Parse the given value into a days of week {@code QuartzCronField}, the sixth entry of a cron expression.
 	 * Expects a "L" or "#" in the given value.
 	 */
@@ -137,7 +142,7 @@ final class QuartzCronField extends CronField {
 				}
 				else { // "[0-7]L"
 					DayOfWeek dayOfWeek = parseDayOfWeek(value.substring(0, idx));
-					adjuster = lastInMonth(dayOfWeek);
+					adjuster = TemporalAdjusters.lastInMonth(dayOfWeek);
 				}
 				return new QuartzCronField(Type.DAY_OF_WEEK, Type.DAY_OF_MONTH, adjuster, value);
 			}
@@ -153,16 +158,13 @@ final class QuartzCronField extends CronField {
 			// "[0-7]#[0-9]+"
 			DayOfWeek dayOfWeek = parseDayOfWeek(value.substring(0, idx));
 			int ordinal = Integer.parseInt(value.substring(idx + 1));
-			if (ordinal <= 0) {
-				throw new IllegalArgumentException("Ordinal '" + ordinal + "' in '" + value +
-						"' must be positive number ");
-			}
 
-			TemporalAdjuster adjuster = dayOfWeekInMonth(ordinal, dayOfWeek);
+			TemporalAdjuster adjuster = TemporalAdjusters.dayOfWeekInMonth(ordinal, dayOfWeek);
 			return new QuartzCronField(Type.DAY_OF_WEEK, Type.DAY_OF_MONTH, adjuster, value);
 		}
 		throw new IllegalArgumentException("No 'L' or '#' found in '" + value + "'");
 	}
+
 
 	private static DayOfWeek parseDayOfWeek(String value) {
 		int dayOfWeek = Integer.parseInt(value);
@@ -179,64 +181,15 @@ final class QuartzCronField extends CronField {
 	}
 
 	/**
-	 * Returns an adjuster that resets to midnight.
-	 */
-	private static TemporalAdjuster atMidnight() {
-		return temporal -> {
-			if (temporal.isSupported(ChronoField.NANO_OF_DAY)) {
-				return temporal.with(ChronoField.NANO_OF_DAY, 0);
-			}
-			else {
-				return temporal;
-			}
-		};
-	}
-
-	/**
-	 * Returns an adjuster that returns a new temporal set to the last
-	 * day of the current month at midnight.
-	 */
-	private static TemporalAdjuster lastDayOfMonth() {
-		TemporalAdjuster adjuster = TemporalAdjusters.lastDayOfMonth();
-		return temporal -> {
-			Temporal result = adjuster.adjustInto(temporal);
-			return rollbackToMidnight(temporal, result);
-		};
-	}
-
-	/**
-	 * Returns an adjuster that returns the last weekday of the month.
-	 */
-	private static TemporalAdjuster lastWeekdayOfMonth() {
-		TemporalAdjuster adjuster = TemporalAdjusters.lastDayOfMonth();
-		return temporal -> {
-			Temporal lastDom = adjuster.adjustInto(temporal);
-			Temporal result;
-			int dow = lastDom.get(ChronoField.DAY_OF_WEEK);
-			if (dow == 6) { // Saturday
-				result = lastDom.minus(1, ChronoUnit.DAYS);
-			}
-			else if (dow == 7) { // Sunday
-				result = lastDom.minus(2, ChronoUnit.DAYS);
-			}
-			else {
-				result = lastDom;
-			}
-			return rollbackToMidnight(temporal, result);
-		};
-	}
-
-	/**
 	 * Return a temporal adjuster that finds the nth-to-last day of the month.
 	 * @param offset the negative offset, i.e. -3 means third-to-last
 	 * @return a nth-to-last day-of-month adjuster
 	 */
 	private static TemporalAdjuster lastDayWithOffset(int offset) {
 		Assert.isTrue(offset < 0, "Offset should be < 0");
-		TemporalAdjuster adjuster = TemporalAdjusters.lastDayOfMonth();
 		return temporal -> {
-			Temporal result = adjuster.adjustInto(temporal).plus(offset, ChronoUnit.DAYS);
-			return rollbackToMidnight(temporal, result);
+			Temporal lastDayOfMonth = TemporalAdjusters.lastDayOfMonth().adjustInto(temporal);
+			return lastDayOfMonth.plus(offset, ChronoUnit.DAYS);
 		};
 	}
 
@@ -262,7 +215,6 @@ final class QuartzCronField extends CronField {
 			int count = 0;
 			while (count++ < CronExpression.MAX_ATTEMPTS) {
 				temporal = Type.DAY_OF_MONTH.elapseUntil(cast(temporal), dayOfMonth);
-				temporal = atMidnight().adjustInto(temporal);
 				current = Type.DAY_OF_MONTH.get(temporal);
 				if (current == dayOfMonth) {
 					dayOfWeek = temporal.get(ChronoField.DAY_OF_WEEK);
@@ -286,44 +238,6 @@ final class QuartzCronField extends CronField {
 			}
 			return null;
 		};
-	}
-
-	/**
-	 * Return a temporal adjuster that finds the last of the given doy-of-week
-	 * in a month.
-	 */
-	private static TemporalAdjuster lastInMonth(DayOfWeek dayOfWeek) {
-		TemporalAdjuster adjuster = TemporalAdjusters.lastInMonth(dayOfWeek);
-		return temporal -> {
-			Temporal result = adjuster.adjustInto(temporal);
-			return rollbackToMidnight(temporal, result);
-		};
-	}
-
-	/**
-	 * Returns a temporal adjuster that finds {@code ordinal}-th occurrence of
-	 * the given day-of-week in a month.
-	 */
-	private static TemporalAdjuster dayOfWeekInMonth(int ordinal, DayOfWeek dayOfWeek) {
-		TemporalAdjuster adjuster = TemporalAdjusters.dayOfWeekInMonth(ordinal, dayOfWeek);
-		return temporal -> {
-			Temporal result = adjuster.adjustInto(temporal);
-			return rollbackToMidnight(temporal, result);
-		};
-	}
-
-	/**
-	 * Rolls back the given {@code result} to midnight. When
-	 * {@code current} has the same day of month as {@code result}, the former
-	 * is returned, to make sure that we don't end up before where we started.
-	 */
-	private static Temporal rollbackToMidnight(Temporal current, Temporal result) {
-		if (result.get(ChronoField.DAY_OF_MONTH) == current.get(ChronoField.DAY_OF_MONTH)) {
-			return current;
-		}
-		else {
-			return atMidnight().adjustInto(result);
-		}
 	}
 
 	@SuppressWarnings("unchecked")

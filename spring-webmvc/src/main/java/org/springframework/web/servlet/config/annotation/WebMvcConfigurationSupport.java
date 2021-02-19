@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2021 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -395,17 +395,6 @@ public class WebMvcConfigurationSupport implements ApplicationContextAware, Serv
 	protected void configurePathMatch(PathMatchConfigurer configurer) {
 	}
 
-	/**
-	 * Return a global {@link PathPatternParser} instance to use for parsing
-	 * patterns to match to the {@link org.springframework.http.server.RequestPath}.
-	 * The returned instance can be configured using
-	 * {@link #configurePathMatch(PathMatchConfigurer)}.
-	 * @since 5.3.4
-	 */
-	@Bean
-	public PathPatternParser mvcPatternParser() {
-		return getPathMatchConfigurer().getPatternParserOrDefault();
-	}
 
 	/**
 	 * Return a global {@link UrlPathHelper} instance which is used to resolve
@@ -525,16 +514,6 @@ public class WebMvcConfigurationSupport implements ApplicationContextAware, Serv
 
 		BeanNameUrlHandlerMapping mapping = new BeanNameUrlHandlerMapping();
 		mapping.setOrder(2);
-
-		PathMatchConfigurer pathConfig = getPathMatchConfigurer();
-		if (pathConfig.getPatternParser() != null) {
-			mapping.setPatternParser(pathConfig.getPatternParser());
-		}
-		else {
-			mapping.setUrlPathHelper(pathConfig.getUrlPathHelperOrDefault());
-			mapping.setPathMatcher(pathConfig.getPathMatcherOrDefault());
-		}
-
 		mapping.setInterceptors(getInterceptors(conversionService, resourceUrlProvider));
 		mapping.setCorsConfigurations(getCorsConfigurations());
 		return mapping;

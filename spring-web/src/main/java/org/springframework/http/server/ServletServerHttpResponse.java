@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
@@ -125,10 +124,6 @@ public class ServletServerHttpResponse implements ServerHttpResponse {
 					this.headers.getContentType().getCharset() != null) {
 				this.servletResponse.setCharacterEncoding(this.headers.getContentType().getCharset().name());
 			}
-			long contentLength = getHeaders().getContentLength();
-			if (contentLength != -1) {
-				this.servletResponse.setContentLengthLong(contentLength);
-			}
 			this.headersWritten = true;
 		}
 	}
@@ -157,14 +152,12 @@ public class ServletServerHttpResponse implements ServerHttpResponse {
 		@Override
 		@Nullable
 		public String getFirst(String headerName) {
-			if (headerName.equalsIgnoreCase(CONTENT_TYPE)) {
-				// Content-Type is written as an override so check super first
-				String value = super.getFirst(headerName);
-				return (value != null ? value : servletResponse.getHeader(headerName));
+			String value = servletResponse.getHeader(headerName);
+			if (value != null) {
+				return value;
 			}
 			else {
-				String value = servletResponse.getHeader(headerName);
-				return (value != null ? value : super.getFirst(headerName));
+				return super.getFirst(headerName);
 			}
 		}
 
@@ -172,13 +165,7 @@ public class ServletServerHttpResponse implements ServerHttpResponse {
 		public List<String> get(Object key) {
 			Assert.isInstanceOf(String.class, key, "Key must be a String-based header name");
 
-			String headerName = (String) key;
-			if (headerName.equalsIgnoreCase(CONTENT_TYPE)) {
-				// Content-Type is written as an override so don't merge
-				return Collections.singletonList(getFirst(headerName));
-			}
-
-			Collection<String> values1 = servletResponse.getHeaders(headerName);
+			Collection<String> values1 = servletResponse.getHeaders((String) key);
 			if (headersWritten) {
 				return new ArrayList<>(values1);
 			}

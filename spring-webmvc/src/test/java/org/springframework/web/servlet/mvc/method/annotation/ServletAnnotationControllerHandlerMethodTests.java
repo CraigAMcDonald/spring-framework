@@ -92,6 +92,7 @@ import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
@@ -960,9 +961,7 @@ public class ServletAnnotationControllerHandlerMethodTests extends AbstractServl
 	void unsupportedRequestBody(boolean usePathPatterns) throws Exception {
 		initDispatcherServlet(RequestResponseBodyController.class, usePathPatterns, wac -> {
 			RootBeanDefinition adapterDef = new RootBeanDefinition(RequestMappingHandlerAdapter.class);
-			StringHttpMessageConverter converter = new StringHttpMessageConverter();
-			converter.setSupportedMediaTypes(Collections.singletonList(MediaType.TEXT_PLAIN));
-			adapterDef.getPropertyValues().add("messageConverters", converter);
+			adapterDef.getPropertyValues().add("messageConverters", new ByteArrayHttpMessageConverter());
 			wac.registerBeanDefinition("handlerAdapter", adapterDef);
 		});
 
@@ -973,7 +972,7 @@ public class ServletAnnotationControllerHandlerMethodTests extends AbstractServl
 		MockHttpServletResponse response = new MockHttpServletResponse();
 		getServlet().service(request, response);
 		assertThat(response.getStatus()).isEqualTo(415);
-		assertThat(response.getHeader("Accept")).isEqualTo("text/plain");
+		assertThat(response.getHeader("Accept")).as("No Accept response header set").isNotNull();
 	}
 
 	@PathPatternsParameterizedTest

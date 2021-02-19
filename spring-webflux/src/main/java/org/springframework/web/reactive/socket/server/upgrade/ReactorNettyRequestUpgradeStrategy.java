@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2021 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import reactor.netty.http.server.HttpServerResponse;
 import reactor.netty.http.server.WebsocketServerSpec;
 
 import org.springframework.core.io.buffer.NettyDataBufferFactory;
+import org.springframework.http.server.reactive.AbstractServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
 import org.springframework.lang.Nullable;
@@ -160,7 +161,7 @@ public class ReactorNettyRequestUpgradeStrategy implements RequestUpgradeStrateg
 			@Nullable String subProtocol, Supplier<HandshakeInfo> handshakeInfoFactory) {
 
 		ServerHttpResponse response = exchange.getResponse();
-		HttpServerResponse reactorResponse = ServerHttpResponseDecorator.getNativeResponse(response);
+		HttpServerResponse reactorResponse = getNativeResponse(response);
 		HandshakeInfo handshakeInfo = handshakeInfoFactory.get();
 		NettyDataBufferFactory bufferFactory = (NettyDataBufferFactory) response.bufferFactory();
 		URI uri = exchange.getRequest().getURI();
@@ -176,6 +177,19 @@ public class ReactorNettyRequestUpgradeStrategy implements RequestUpgradeStrateg
 						return handler.handle(session).checkpoint(uri + " [ReactorNettyRequestUpgradeStrategy]");
 					}, spec);
 				}));
+	}
+
+	private static HttpServerResponse getNativeResponse(ServerHttpResponse response) {
+		if (response instanceof AbstractServerHttpResponse) {
+			return ((AbstractServerHttpResponse) response).getNativeResponse();
+		}
+		else if (response instanceof ServerHttpResponseDecorator) {
+			return getNativeResponse(((ServerHttpResponseDecorator) response).getDelegate());
+		}
+		else {
+			throw new IllegalArgumentException(
+					"Couldn't find native response in " + response.getClass().getName());
+		}
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2021 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import reactor.core.publisher.Mono;
 
 import org.springframework.http.HttpHeaders;
@@ -55,8 +53,6 @@ import org.springframework.util.MultiValueMap;
  * @see FluxExchangeResult
  */
 public class ExchangeResult {
-
-	private static Log logger = LogFactory.getLog(ExchangeResult.class);
 
 	private static final List<MediaType> PRINTABLE_MEDIA_TYPES = Arrays.asList(
 			MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML,
@@ -227,10 +223,7 @@ public class ExchangeResult {
 			assertion.run();
 		}
 		catch (AssertionError ex) {
-			if (logger.isErrorEnabled()) {
-				logger.error("Request details for assertion failure:\n" + this);
-			}
-			throw ex;
+			throw new AssertionError(ex.getMessage() + "\n" + this, ex);
 		}
 	}
 

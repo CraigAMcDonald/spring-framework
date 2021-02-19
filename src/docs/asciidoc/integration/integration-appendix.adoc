@@ -20,7 +20,8 @@ To use the elements in the `jee` schema, you need to have the following preamble
 of your Spring XML configuration file. The text in the following snippet references the
 correct schema so that the elements in the `jee` namespace are available to you:
 
-[source,xml,indent=0,subs="verbatim,quotes"]
+[source,xml,indent=0]
+[subs="verbatim,quotes"]
 ----
 	<?xml version="1.0" encoding="UTF-8"?>
 	<beans xmlns="http://www.springframework.org/schema/beans"
@@ -42,7 +43,8 @@ correct schema so that the elements in the `jee` namespace are available to you:
 
 The following example shows how to use JNDI to look up a data source without the `jee` schema:
 
-[source,xml,indent=0,subs="verbatim,quotes"]
+[source,xml,indent=0]
+[subs="verbatim,quotes"]
 ----
 	<bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
 		<property name="jndiName" value="jdbc/MyDataSource"/>
@@ -56,7 +58,8 @@ The following example shows how to use JNDI to look up a data source without the
 The following example shows how to use JNDI to look up a data source with the `jee`
 schema:
 
-[source,xml,indent=0,subs="verbatim,quotes"]
+[source,xml,indent=0]
+[subs="verbatim,quotes"]
 ----
 	<jee:jndi-lookup id="dataSource" jndi-name="jdbc/MyDataSource"/>
 
@@ -74,7 +77,8 @@ schema:
 The following example shows how to use JNDI to look up an environment variable without
 `jee`:
 
-[source,xml,indent=0,subs="verbatim,quotes"]
+[source,xml,indent=0]
+[subs="verbatim,quotes"]
 ----
 	<bean id="simple" class="org.springframework.jndi.JndiObjectFactoryBean">
 		<property name="jndiName" value="jdbc/MyDataSource"/>
@@ -88,7 +92,8 @@ The following example shows how to use JNDI to look up an environment variable w
 
 The following example shows how to use JNDI to look up an environment variable with `jee`:
 
-[source,xml,indent=0,subs="verbatim,quotes"]
+[source,xml,indent=0]
+[subs="verbatim,quotes"]
 ----
 	<jee:jndi-lookup id="simple" jndi-name="jdbc/MyDataSource">
 		<jee:environment>ping=pong</jee:environment>
@@ -102,7 +107,8 @@ The following example shows how to use JNDI to look up an environment variable w
 The following example shows how to use JNDI to look up multiple environment variables
 without `jee`:
 
-[source,xml,indent=0,subs="verbatim,quotes"]
+[source,xml,indent=0]
+[subs="verbatim,quotes"]
 ----
 	<bean id="simple" class="org.springframework.jndi.JndiObjectFactoryBean">
 		<property name="jndiName" value="jdbc/MyDataSource"/>
@@ -118,7 +124,8 @@ without `jee`:
 The following example shows how to use JNDI to look up multiple environment variables with
 `jee`:
 
-[source,xml,indent=0,subs="verbatim,quotes"]
+[source,xml,indent=0]
+[subs="verbatim,quotes"]
 ----
 	<jee:jndi-lookup id="simple" jndi-name="jdbc/MyDataSource">
 		<!-- newline-separated, key-value pairs for the environment (standard Properties format) -->
@@ -136,7 +143,8 @@ The following example shows how to use JNDI to look up multiple environment vari
 The following example shows how to use JNDI to look up a data source and a number of
 different properties without `jee`:
 
-[source,xml,indent=0,subs="verbatim,quotes"]
+[source,xml,indent=0]
+[subs="verbatim,quotes"]
 ----
 	<bean id="simple" class="org.springframework.jndi.JndiObjectFactoryBean">
 		<property name="jndiName" value="jdbc/MyDataSource"/>
@@ -151,7 +159,8 @@ different properties without `jee`:
 The following example shows how to use JNDI to look up a data source and a number of
 different properties with `jee`:
 
-[source,xml,indent=0,subs="verbatim,quotes"]
+[source,xml,indent=0]
+[subs="verbatim,quotes"]
 ----
 	<jee:jndi-lookup id="simple"
 			jndi-name="jdbc/MyDataSource"
@@ -172,7 +181,8 @@ The `<jee:local-slsb/>` element configures a reference to a local EJB Stateless 
 The following example shows how to configures a reference to a local EJB Stateless Session Bean
 without `jee`:
 
-[source,xml,indent=0,subs="verbatim,quotes"]
+[source,xml,indent=0]
+[subs="verbatim,quotes"]
 ----
 	<bean id="simple"
 			class="org.springframework.ejb.access.LocalStatelessSessionProxyFactoryBean">
@@ -184,7 +194,8 @@ without `jee`:
 The following example shows how to configures a reference to a local EJB Stateless Session Bean
 with `jee`:
 
-[source,xml,indent=0,subs="verbatim,quotes"]
+[source,xml,indent=0]
+[subs="verbatim,quotes"]
 ----
 	<jee:local-slsb id="simpleSlsb" jndi-name="ejb/RentalServiceBean"
 			business-interface="com.foo.service.RentalService"/>
@@ -200,7 +211,8 @@ The `<jee:local-slsb/>` element configures a reference to a local EJB Stateless 
 The following example shows how to configures a reference to a local EJB Stateless Session Bean
 and a number of properties without `jee`:
 
-[source,xml,indent=0,subs="verbatim,quotes"]
+[source,xml,indent=0]
+[subs="verbatim,quotes"]
 ----
 	<bean id="complexLocalEjb"
 			class="org.springframework.ejb.access.LocalStatelessSessionProxyFactoryBean">
@@ -215,7 +227,8 @@ and a number of properties without `jee`:
 The following example shows how to configures a reference to a local EJB Stateless Session Bean
 and a number of properties with `jee`:
 
-[source,xml,indent=0,subs="verbatim,quotes"]
+[source,xml,indent=0]
+[subs="verbatim,quotes"]
 ----
 	<jee:local-slsb id="complexLocalEjb"
 			jndi-name="ejb/RentalServiceBean"
@@ -234,7 +247,8 @@ The `<jee:remote-slsb/>` element configures a reference to a `remote` EJB Statel
 The following example shows how to configures a reference to a remote EJB Stateless Session Bean
 without `jee`:
 
-[source,xml,indent=0,subs="verbatim,quotes"]
+[source,xml,indent=0]
+[subs="verbatim,quotes"]
 ----
 	<bean id="complexRemoteEjb"
 			class="org.springframework.ejb.access.SimpleRemoteStatelessSessionProxyFactoryBean">
@@ -251,7 +265,8 @@ without `jee`:
 The following example shows how to configures a reference to a remote EJB Stateless Session Bean
 with `jee`:
 
-[source,xml,indent=0,subs="verbatim,quotes"]
+[source,xml,indent=0]
+[subs="verbatim,quotes"]
 ----
 	<jee:remote-slsb id="complexRemoteEjb"
 			jndi-name="ejb/MyRemoteBean"
@@ -279,7 +294,8 @@ the following preamble at the top of your Spring XML configuration file. The tex
 following snippet references the correct schema so that the elements in the `jms` namespace
 are available to you:
 
-[source,xml,indent=0,subs="verbatim,quotes"]
+[source,xml,indent=0]
+[subs="verbatim,quotes"]
 ----
 	<?xml version="1.0" encoding="UTF-8"?>
 	<beans xmlns="http://www.springframework.org/schema/beans"
@@ -316,7 +332,8 @@ To use the elements in the `cache` schema, you need to have the following preamb
 top of your Spring XML configuration file. The text in the following snippet references
 the correct schema so that the elements in the `cache` namespace are available to you:
 
-[source,xml,indent=0,subs="verbatim,quotes"]
+[source,xml,indent=0]
+[subs="verbatim,quotes"]
 ----
 	<?xml version="1.0" encoding="UTF-8"?>
 	<beans xmlns="http://www.springframework.org/schema/beans"

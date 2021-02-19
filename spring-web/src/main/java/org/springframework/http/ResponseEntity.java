@@ -31,8 +31,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.ObjectUtils;
 
 /**
- * Extension of {@link HttpEntity} that adds an {@link HttpStatus} status code.
- * Used in {@code RestTemplate} as well as in {@code @Controller} methods.
+ * Extension of {@link HttpEntity} that adds a {@link HttpStatus} status code.
+ * Used in {@code RestTemplate} as well {@code @Controller} methods.
  *
  * <p>In {@code RestTemplate}, this class is returned by
  * {@link org.springframework.web.client.RestTemplate#getForEntity getForEntity()} and
@@ -44,8 +44,7 @@ import org.springframework.util.ObjectUtils;
  * HttpStatus statusCode = entity.getStatusCode();
  * </pre>
  *
- * <p>This can also be used in Spring MVC as the return value from an
- * {@code @Controller} method:
+ * <p>Can also be used in Spring MVC, as the return value from a @Controller method:
  * <pre class="code">
  * &#64;RequestMapping("/handle")
  * public ResponseEntity&lt;String&gt; handle() {
@@ -82,7 +81,7 @@ public class ResponseEntity<T> extends HttpEntity<T> {
 
 
 	/**
-	 * Create an {@code ResponseEntity} with a status code only.
+	 * Create a new {@code ResponseEntity} with the given status code, and no body nor headers.
 	 * @param status the status code
 	 */
 	public ResponseEntity(HttpStatus status) {
@@ -90,7 +89,7 @@ public class ResponseEntity<T> extends HttpEntity<T> {
 	}
 
 	/**
-	 * Create an {@code ResponseEntity} with a body and status code.
+	 * Create a new {@code ResponseEntity} with the given body and status code, and no headers.
 	 * @param body the entity body
 	 * @param status the status code
 	 */
@@ -99,7 +98,7 @@ public class ResponseEntity<T> extends HttpEntity<T> {
 	}
 
 	/**
-	 * Create an {@code HttpEntity} with headers and a status code.
+	 * Create a new {@code HttpEntity} with the given headers and status code, and no body.
 	 * @param headers the entity headers
 	 * @param status the status code
 	 */
@@ -108,7 +107,7 @@ public class ResponseEntity<T> extends HttpEntity<T> {
 	}
 
 	/**
-	 * Create an {@code HttpEntity} with a body, headers, and a status code.
+	 * Create a new {@code HttpEntity} with the given body, headers, and status code.
 	 * @param body the entity body
 	 * @param headers the entity headers
 	 * @param status the status code
@@ -118,7 +117,7 @@ public class ResponseEntity<T> extends HttpEntity<T> {
 	}
 
 	/**
-	 * Create an {@code HttpEntity} with a body, headers, and a raw status code.
+	 * Create a new {@code HttpEntity} with the given body, headers, and status code.
 	 * @param body the entity body
 	 * @param headers the entity headers
 	 * @param rawStatus the status code value
@@ -129,7 +128,11 @@ public class ResponseEntity<T> extends HttpEntity<T> {
 	}
 
 	/**
-	 * Private constructor.
+	 * Create a new {@code HttpEntity} with the given body, headers, and status code.
+	 * Just used behind the nested builder API.
+	 * @param body the entity body
+	 * @param headers the entity headers
+	 * @param status the status code (as {@code HttpStatus} or as {@code Integer} value)
 	 */
 	private ResponseEntity(@Nullable T body, @Nullable MultiValueMap<String, String> headers, Object status) {
 		super(body, headers);

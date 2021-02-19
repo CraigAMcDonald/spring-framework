@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2021 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ import org.springframework.util.Assert;
  *
  * @author Thomas Risberg
  * @author Juergen Hoeller
- * @author Yanming Zhou
  * @since 2.0
  */
 public abstract class NamedParameterUtils {
@@ -347,14 +346,8 @@ public abstract class NamedParameterUtils {
 			String paramName = paramNames.get(i);
 			try {
 				SqlParameter param = findParameter(declaredParams, paramName, i);
-				Object paramValue = paramSource.getValue(paramName);
-				if (paramValue instanceof SqlParameterValue) {
-					paramArray[i] = paramValue;
-				}
-				else {
-					paramArray[i] = (param != null ? new SqlParameterValue(param, paramValue) :
-							SqlParameterSourceUtils.getTypedValue(paramSource, paramName));
-				}
+				paramArray[i] = (param != null ? new SqlParameterValue(param, paramSource.getValue(paramName)) :
+						SqlParameterSourceUtils.getTypedValue(paramSource, paramName));
 			}
 			catch (IllegalArgumentException ex) {
 				throw new InvalidDataAccessApiUsageException(

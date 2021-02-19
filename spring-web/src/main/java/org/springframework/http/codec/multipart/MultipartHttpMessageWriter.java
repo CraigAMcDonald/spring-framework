@@ -199,10 +199,6 @@ public class MultipartHttpMessageWriter extends MultipartWriterSupport
 				.concatWith(generateLastLine(boundary, bufferFactory))
 				.doOnDiscard(PooledDataBuffer.class, DataBufferUtils::release);
 
-		if (logger.isDebugEnabled()) {
-			body = body.doOnNext(buffer -> Hints.touchDataBuffer(buffer, hints, logger));
-		}
-
 		return outputMessage.writeWith(body);
 	}
 
